@@ -90,7 +90,7 @@ function stringToNumber(string){
 
 
 $(document).ready(function(){
-$.ajax({url: 'http://cida.usgs.gov/ca_drought/data/reservoirs/reservoir_storage.json', success: function(data){
+$.ajax({url: 'data/reservoirs/reservoir_storage.json', success: function(data){
 	addStackedAreaChart(data);
 }});
 });
