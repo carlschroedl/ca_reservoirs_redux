@@ -24,16 +24,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-function addStackedAreaChart(data){
-data = data.map(function(datum){
-	datum.values = [];
-    Object.keys(datum.Storage, function(key, value){
-		var timestamp = toTimestamp(key);
-		var volume = stringToNumber(value);
-		datum.values.push([timestamp, volume]);
-	});
-	return datum;
-});
+function addStackedAreaChart(data, dataMapper, selector){
+data = data.map(dataMapper);
 nv.addGraph(function() {
 	var tooltip = function(key, year, e, graph) { 
 		return null;
@@ -42,8 +34,8 @@ nv.addGraph(function() {
                   .margin({right: 100})
                   .x(function(d) { return d[0] })   //We can modify the data accessor functions...
                   .y(function(d) { return d[1] })   //...in case your data is formatted differently.
-                  //.useInteractiveGuideline(true)    //Tooltips which show all data points. Very nice!
-		  .tooltip(tooltip)
+                  .useInteractiveGuideline(true)    //Tooltips which show all data points. Very nice!
+		              .tooltip(tooltip)
                   .rightAlignYAxis(true)      //Let's move the y-axis to the right side.
                   .transitionDuration(500)
                   .showControls(true)       //Allow user to choose 'Stacked', 'Stream', 'Expanded' mode.
@@ -56,13 +48,15 @@ nv.addGraph(function() {
     //Format x-axis labels with custom function.
     chart.xAxis
         .tickFormat(function(d) { 
-          return d3.time.format('%Y')(new Date(d)) 
+          return d3.time.format('%b %Y')(new Date(d)) 
     });
+
+  chart.xAxis.ticks(d3.time.years, 1);
 
     chart.yAxis
         .tickFormat(d3.format(',.0f'));
 
-    d3.select('#stacked-area-chart svg')
+    d3.select(selector)
       .datum(data)
       .call(chart);
 
@@ -90,9 +84,34 @@ function stringToNumber(string){
 
 
 $(document).ready(function(){
-$.ajax({url: 'data/reservoirs/reservoir_storage.json', success: function(data){
-	addStackedAreaChart(data);
-}});
+  $.ajax({url: 'data/reservoirs/reservoir_storage.json', success: function(data){
+    data = data.sortBy('Elev');
+  	addStackedAreaChart(data, function(datum){
+      datum.key = datum.Station;
+      datum.values = [];
+        Object.keys(datum.Storage, function(key, value){
+        var timestamp = toTimestamp(key);
+        var volume = stringToNumber(value);
+        datum.values.push([timestamp, volume]);
+      });
+      return datum;
+      },
+      '#individual-reservoirs svg'
+    );
+  // addStackedAreaChart(data, function(datum){
+  //     datum.values = [];
+  //     //d3.layout.histogram().bins(5)(data.map('Elev'));
+  //       Object.keys(datum.Storage, function(key, value){
+  //       var timestamp = toTimestamp(key);
+  //       var volume = stringToNumber(value);
+  //       datum.values.push([timestamp, volume]);
+  //     });
+  //     return datum;
+  //     },
+  //     '#reservoirs-grouped-by-elevation svg'
+  //   );
+
+  }});
 });
 
 }());
